@@ -1,18 +1,13 @@
-import type { Quest } from '@/domain/game/entities/Quest';
-import { makeId } from '@/shared/lib/id';
+import { REALM_ROLLING_PLAINS } from '@/domain/game/rules/realms';
 
 export default function HomePage() {
-  const q: Quest = {
-    id: makeId('quest'),
-    title: 'Alias test',
-    description: 'If this renders, @/* works.',
-  };
+  const realm = REALM_ROLLING_PLAINS;
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <div className="rounded border p-4">
-        <div className="font-semibold">{q.title}</div>
-        <div className="text-sm opacity-70">{q.id}</div>
+    <main className="min-h-screen flex items-center justify-center bg-black text-white">
+      <div className="max-w-md rounded-lg border border-white/20 p-6">
+        <h1 className="mb-2 text-xl font-semibold">{realm.name}</h1>
+        <p className="text-sm opacity-80">{realm.description}</p>
       </div>
     </main>
   );
