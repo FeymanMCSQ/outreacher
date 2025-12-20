@@ -1,14 +1,29 @@
-import { REALM_ROLLING_PLAINS } from '@/domain/game/rules/realms';
+'use client';
+
+import { useState } from 'react';
+import QuestCard from '@/shared/game-ui/QuestCard';
+import { completeQuest } from '@/domain/game/services/completeQuest';
+import type { Quest } from '@/domain/game/entities/Quest';
+import { makeId } from '@/shared/lib/id';
 
 export default function HomePage() {
-  const realm = REALM_ROLLING_PLAINS;
+  const [quest, setQuest] = useState<Quest>(() => ({
+    id: makeId('quest'),
+    title: 'Locate Complaint',
+    description: 'Find one explicit expression of frustration and save it.',
+    category: 'discovery',
+    status: 'pending',
+  }));
+
+  function handleComplete() {
+    // Deterministic for demo: inject fixed timestamp
+    const completedAt = '2025-12-20T12:00:00.000Z';
+    setQuest((q) => completeQuest(q, completedAt));
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-black text-white">
-      <div className="max-w-md rounded-lg border border-white/20 p-6">
-        <h1 className="mb-2 text-xl font-semibold">{realm.name}</h1>
-        <p className="text-sm opacity-80">{realm.description}</p>
-      </div>
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <QuestCard quest={quest} onComplete={handleComplete} />
     </main>
   );
 }
