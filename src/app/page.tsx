@@ -47,44 +47,43 @@ export default function HomePage() {
 
   const handleCompleteQuest = useCallback(
     (questId: string) => {
-      setMission((m) => {
-        const wasDone = isMissionComplete(m);
+      const wasDone = isMissionComplete(mission);
 
-        const idx = m.quests.findIndex((q) => q.id === questId);
-        if (idx === -1) return m;
+      const idx = mission.quests.findIndex((q) => q.id === questId);
+      if (idx === -1) return;
 
-        const before = m.quests[idx];
-        const after = completeQuest(before, COMPLETE_AT);
+      const before = mission.quests[idx];
+      const after = completeQuest(before, COMPLETE_AT);
 
-        // already complete => no change
-        if (before === after) return m;
+      // already complete => no change
+      if (before === after) return;
 
-        const nextQuests = m.quests.slice();
-        nextQuests[idx] = after;
+      const nextQuests = mission.quests.slice();
+      nextQuests[idx] = after;
 
-        const nextCompletedIds =
-          after.status === 'completed' && !m.completedQuestIds.includes(questId)
-            ? [...m.completedQuestIds, questId]
-            : m.completedQuestIds;
+      const nextCompletedIds =
+        after.status === 'completed' &&
+        !mission.completedQuestIds.includes(questId)
+          ? [...mission.completedQuestIds, questId]
+          : mission.completedQuestIds;
 
-        const nextMission: Mission = {
-          ...m,
-          quests: nextQuests,
-          completedQuestIds: nextCompletedIds,
-        };
+      const nextMission: Mission = {
+        ...mission,
+        quests: nextQuests,
+        completedQuestIds: nextCompletedIds,
+      };
 
-        const nowDone = isMissionComplete(nextMission);
+      setMission(nextMission);
 
-        // Fire completion rewards exactly once when transitioning not-done -> done
-        if (!wasDone && nowDone && !completionFiredRef.current) {
-          completionFiredRef.current = true;
-          triggerMissionCompleteFx();
-        }
+      const nowDone = isMissionComplete(nextMission);
 
-        return nextMission;
-      });
+      // Fire completion rewards exactly once when transitioning not-done -> done
+      if (!wasDone && nowDone && !completionFiredRef.current) {
+        completionFiredRef.current = true;
+        triggerMissionCompleteFx();
+      }
     },
-    [triggerMissionCompleteFx],
+    [mission, triggerMissionCompleteFx],
   );
 
   const resetMission = useCallback(() => {
