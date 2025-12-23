@@ -15,4 +15,5 @@ export type GameState = {
 
   // Prevent “grinding”: track star-awarding mission per day
   lastStarEarnedDayKey?: string; // e.g. "2025-12-20"
+  completedMissionIds: string[];
 };

@@ -17,10 +17,9 @@ import {
 
 const DAY_KEY = '2025-12-20';
 const ARCHETYPE: Mission['archetype'] = 'recon';
-
-const COMPLETE_AT = '2025-12-20T12:00:00.000Z';
-const MISSION_COMPLETE_SFX = '/sfx/quest-complete-1.mp3'; // rename later if you want
 const COMPLETE_FX_DURATION_MS = 900;
+const COMPLETE_AT = '2025-12-20T12:00:00.000Z';
+const MISSION_COMPLETE_SFX = '/sfx/quest-complete-1.mp3';
 
 export default function HomePage() {
   const [mission, setMission] = useState<Mission>(() =>
@@ -30,7 +29,7 @@ export default function HomePage() {
   const [stars, setStars] = useState(0);
   const [showCompleteFx, setShowCompleteFx] = useState(false);
 
-  // one-shot gate per mission instance
+  // One-shot gate per mission instance
   const completionFiredRef = useRef(false);
 
   const progress = useMemo(() => getMissionProgress(mission), [mission]);
@@ -42,52 +41,59 @@ export default function HomePage() {
     playSound(MISSION_COMPLETE_SFX);
 
     setShowCompleteFx(true);
-    window.setTimeout(() => setShowCompleteFx(false), COMPLETE_FX_DURATION_MS);
+
+    // auto-hide after duration
+    window.setTimeout(() => {
+      setShowCompleteFx(false);
+    }, COMPLETE_FX_DURATION_MS);
   }, []);
 
   const handleCompleteQuest = useCallback(
     (questId: string) => {
-      const wasDone = isMissionComplete(mission);
+      setMission((m) => {
+        const wasDone = isMissionComplete(m);
 
-      const idx = mission.quests.findIndex((q) => q.id === questId);
-      if (idx === -1) return;
+        const idx = m.quests.findIndex((q) => q.id === questId);
+        if (idx === -1) return m;
 
-      const before = mission.quests[idx];
-      const after = completeQuest(before, COMPLETE_AT);
+        const before = m.quests[idx];
+        const after = completeQuest(before, COMPLETE_AT);
 
-      // already complete => no change
-      if (before === after) return;
+        if (before === after) return m;
 
-      const nextQuests = mission.quests.slice();
-      nextQuests[idx] = after;
+        const nextQuests = m.quests.slice();
+        nextQuests[idx] = after;
 
-      const nextCompletedIds =
-        after.status === 'completed' &&
-        !mission.completedQuestIds.includes(questId)
-          ? [...mission.completedQuestIds, questId]
-          : mission.completedQuestIds;
+        const nextCompletedIds =
+          after.status === 'completed' && !m.completedQuestIds.includes(questId)
+            ? [...m.completedQuestIds, questId]
+            : m.completedQuestIds;
 
-      const nextMission: Mission = {
-        ...mission,
-        quests: nextQuests,
-        completedQuestIds: nextCompletedIds,
-      };
+        const nextMission: Mission = {
+          ...m,
+          quests: nextQuests,
+          completedQuestIds: nextCompletedIds,
+        };
 
-      setMission(nextMission);
+        const nowDone = isMissionComplete(nextMission);
 
-      const nowDone = isMissionComplete(nextMission);
+        if (!wasDone && nowDone && !completionFiredRef.current) {
+          completionFiredRef.current = true;
+          triggerMissionCompleteFx();
+        }
 
-      // Fire completion rewards exactly once when transitioning not-done -> done
-      if (!wasDone && nowDone && !completionFiredRef.current) {
-        completionFiredRef.current = true;
-        triggerMissionCompleteFx();
-      }
+        return nextMission;
+      });
     },
-    [mission, triggerMissionCompleteFx],
+    [triggerMissionCompleteFx],
   );
 
   const resetMission = useCallback(() => {
     completionFiredRef.current = false;
+
+    // clear overlay on reset (refresh clears it automatically)
+    setShowCompleteFx(false);
+
     setMission(generateDailyMission({ dayKey: DAY_KEY, archetype: ARCHETYPE }));
   }, []);
 
