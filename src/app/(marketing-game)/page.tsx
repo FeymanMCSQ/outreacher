@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 
 import QuestCard from '@/shared/game-ui/QuestCard';
 import { MissionCompleteOverlay } from '@/shared/game-ui/MissionCompleteOverlay';
@@ -16,6 +16,8 @@ import {
 } from '@/domain/game/services/missionProgress';
 
 import { REALM_CATALOG } from '@/data/realms/realmCatalog';
+import { LocalGameStateRepo } from '@/data/repositories/LocalGameStateRepo';
+import type { GameState } from '@/domain/game/types';
 
 const DAY_KEY = '2025-12-20';
 const ARCHETYPE: Mission['archetype'] = 'recon';
@@ -24,42 +26,79 @@ const COMPLETE_AT = '2025-12-20T12:00:00.000Z';
 const COMPLETE_FX_DURATION_MS = 900;
 const MISSION_COMPLETE_SFX = '/sfx/quest-complete-1.mp3';
 
+function isValidRealmId(x: unknown): x is 'realm-1' | 'realm-2' {
+  return x === 'realm-1' || x === 'realm-2';
+}
+
+function loadInitialState(repo: LocalGameStateRepo): {
+  stars: number;
+  currentRealmId: 'realm-1' | 'realm-2';
+  mission: Mission;
+} {
+  const fallbackMission = generateDailyMission({
+    dayKey: DAY_KEY,
+    archetype: ARCHETYPE,
+  });
+
+  // SSR safety
+  if (typeof window === 'undefined') {
+    return { stars: 0, currentRealmId: 'realm-1', mission: fallbackMission };
+  }
+
+  const saved = repo.load();
+  if (!saved) {
+    return { stars: 0, currentRealmId: 'realm-1', mission: fallbackMission };
+  }
+
+  const stars = saved.player?.stars ?? 0;
+
+  const realm = isValidRealmId(saved.realms?.currentRealmId)
+    ? saved.realms.currentRealmId
+    : 'realm-1';
+
+  const todays = saved.missions?.activeMissionsByDay?.[DAY_KEY] as
+    | Mission
+    | undefined;
+
+  return {
+    stars,
+    currentRealmId: realm,
+    mission: todays ?? fallbackMission,
+  };
+}
+
 export default function HomePage() {
-  /* ────────────────────────
-     Realm state (Quest 4.5)
-  ──────────────────────── */
+  // stable repo
+  const repo = useMemo(() => new LocalGameStateRepo(), []);
+
+  // ✅ Load persisted state via lazy init (NO setState in effects)
+  const initial = useMemo(() => loadInitialState(repo), [repo]);
+
+  const [stars, setStars] = useState<number>(() => initial.stars);
   const [currentRealmId, setCurrentRealmId] = useState<'realm-1' | 'realm-2'>(
-    'realm-1',
+    () => initial.currentRealmId,
   );
+  const [mission, setMission] = useState<Mission>(() => initial.mission);
+
+  const [showCompleteFx, setShowCompleteFx] = useState(false);
+  const completionFiredRef = useRef(false);
+
+  // Skip first save so we don't immediately rewrite storage with whatever we loaded
+  const didMountRef = useRef(false);
 
   const currentRealm = useMemo(
     () => REALM_CATALOG.find((r) => r.id === currentRealmId)!,
     [currentRealmId],
   );
 
-  function trySwitchRealm(realmId: 'realm-1' | 'realm-2') {
-    // Realm II requires 30 stars
-    if (realmId === 'realm-2' && stars < 30) {
-      return; // later: open RealmGateOverlay
-    }
-    setCurrentRealmId(realmId);
-  }
-
-  /* ────────────────────────
-     Mission state
-  ──────────────────────── */
-  const [mission, setMission] = useState<Mission>(() =>
-    generateDailyMission({ dayKey: DAY_KEY, archetype: ARCHETYPE }),
-  );
-
-  const [stars, setStars] = useState(0);
-  const [showCompleteFx, setShowCompleteFx] = useState(false);
-
-  const completionFiredRef = useRef(false);
-
   const progress = useMemo(() => getMissionProgress(mission), [mission]);
   const remaining = useMemo(() => getRemainingQuests(mission), [mission]);
   const done = useMemo(() => isMissionComplete(mission), [mission]);
+
+  function trySwitchRealm(realmId: 'realm-1' | 'realm-2') {
+    if (realmId === 'realm-2' && stars < 30) return;
+    setCurrentRealmId(realmId);
+  }
 
   function triggerMissionCompleteFx() {
     setStars((s) => s + 1);
@@ -109,9 +148,29 @@ export default function HomePage() {
     setMission(generateDailyMission({ dayKey: DAY_KEY, archetype: ARCHETYPE }));
   }
 
-  /* ────────────────────────
-     Render
-  ──────────────────────── */
+  // ✅ Save whenever state changes (effect does NOT set state, so lint should allow)
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+
+    const unlockedRealmIds: Array<'realm-1' | 'realm-2'> =
+      stars >= 30 ? ['realm-1', 'realm-2'] : ['realm-1'];
+
+    const state: GameState = {
+      version: 1,
+      player: { stars },
+      realms: { currentRealmId, unlockedRealmIds },
+      missions: {
+        activeMissionsByDay: { [DAY_KEY]: mission },
+        completedMissionIds: done ? [mission.id] : [],
+      },
+    };
+
+    repo.save(state);
+  }, [stars, currentRealmId, mission, done, repo]);
+
   return (
     <main
       className={[
@@ -125,7 +184,6 @@ export default function HomePage() {
       <MissionCompleteOverlay show={showCompleteFx} />
 
       <div className="mx-auto max-w-2xl">
-        {/* Realm switcher (dev harness) */}
         <div className="mb-6 rounded-lg border p-4">
           <div className="text-sm opacity-70">Realm</div>
           <div className="mt-1 text-lg font-semibold">{currentRealm.name}</div>
@@ -153,7 +211,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Mission header */}
         <header className="mb-6 rounded-lg border p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -198,7 +255,6 @@ export default function HomePage() {
           )}
         </header>
 
-        {/* Quests */}
         <section className="space-y-4">
           {remaining.map((q) => (
             <QuestCard
