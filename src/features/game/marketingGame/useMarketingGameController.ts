@@ -6,10 +6,11 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { playSound } from '@/shared/lib/playSound';
 
 import type { Mission } from '@/domain/game/entities/Mission';
-import type { GameState } from '@/domain/game/types';
+import type { GameState, StreakProgress } from '@/domain/game/types';
 
 import { completeQuest } from '@/domain/game/services/completeQuest';
 import { advanceMissionForDay } from '@/domain/game/services/missionLifecycle';
+import { applyStreakOnCompletion } from '@/domain/game/services/streak';
 import {
   getMissionProgress,
   getRemainingQuests,
@@ -28,6 +29,12 @@ const COMPLETE_AT = '2025-12-20T12:00:00.000Z';
 const COMPLETE_FX_DURATION_MS = 900;
 const MISSION_COMPLETE_SFX = '/sfx/quest-complete-1.mp3';
 
+const DEFAULT_STREAK: StreakProgress = {
+  current: 0,
+  best: 0,
+  lastCompletedDayKey: undefined,
+};
+
 export function useMarketingGameController() {
   const repo = useMemo(() => new LocalGameStateRepo(), []);
   const initial = useMemo(() => loadMarketingGameInitial(repo), [repo]);
@@ -42,6 +49,11 @@ export function useMarketingGameController() {
   // ✅ runIndex must be real React state (no ref reads during render)
   const [runIndex, setRunIndex] = useState<number>(() => {
     return initial.backingState.missions.runIndexByDay?.[initial.dayKey] ?? 0;
+  });
+
+  // ✅ streak must be React state (UI needs to re-render)
+  const [streak, setStreak] = useState<StreakProgress>(() => {
+    return initial.backingState.player.streak ?? DEFAULT_STREAK;
   });
 
   const [showCompleteFx, setShowCompleteFx] = useState(false);
@@ -75,7 +87,7 @@ export function useMarketingGameController() {
 
   const completeQuestAction = useCallback(
     (questId: string) => {
-      // Use 'mission' from closure - safe enough for click handlers
+      // Uses 'mission' from closure - okay for click handlers
       const m = mission;
       const wasDone = isMissionComplete(m);
 
@@ -102,18 +114,31 @@ export function useMarketingGameController() {
 
       const nowDone = isMissionComplete(nextMission);
 
-      // 1. Update React state with the quest progress
+      // 1) Update React state with quest progress
       setMission(nextMission);
 
-      // 2. Side Effects (Trigger ONLY once)
+      // 2) Completion edge -> side effects exactly once
       if (!wasDone && nowDone && !completionFiredRef.current) {
         completionFiredRef.current = true;
+
+        // ⭐ award + FX
         triggerMissionCompleteFx();
 
-        // Store completed mission under current run key
+        // 🔥 streak update (only once per dayKey)
+        const nextStreak = applyStreakOnCompletion(
+          stateRef.current.player.streak ?? DEFAULT_STREAK,
+          dayKey,
+        );
+        setStreak(nextStreak);
+
+        // Store completed mission under current run key + persist streak into backing state
         const key = currentRunKey(stateRef.current, dayKey);
         stateRef.current = {
           ...stateRef.current,
+          player: {
+            ...stateRef.current.player,
+            streak: nextStreak,
+          },
           missions: {
             ...stateRef.current.missions,
             runIndexByDay: stateRef.current.missions.runIndexByDay ?? {},
@@ -126,33 +151,32 @@ export function useMarketingGameController() {
               new Set([
                 ...stateRef.current.missions.completedMissionIds,
                 nextMission.id,
-              ])
+              ]),
             ),
           },
         };
 
-        // Advance to next mission (speedrun)
+        // Speedrun: immediately advance to next mission
         const advanced = advanceMissionForDay(stateRef.current, dayKey);
         stateRef.current = advanced.state;
 
-        // Update runIndex state from the advanced state
+        // Update runIndex from the advanced state
         const nextRun = advanced.state.missions.runIndexByDay?.[dayKey] ?? 0;
         setRunIndex(nextRun);
 
-        // Reset local UI flags for the NEW mission
+        // Reset flags for the NEW mission
         completionFiredRef.current = false;
         setShowCompleteFx(false);
         setMission(advanced.mission);
       }
     },
-    [mission, dayKey, triggerMissionCompleteFx]
+    [mission, dayKey, triggerMissionCompleteFx],
   );
 
   const resetMission = useCallback(() => {
     const advanced = advanceMissionForDay(stateRef.current, dayKey);
     stateRef.current = advanced.state;
 
-    // ✅ update runIndex state from the advanced state
     const nextRun = advanced.state.missions.runIndexByDay?.[dayKey] ?? 0;
     setRunIndex(nextRun);
 
@@ -165,10 +189,11 @@ export function useMarketingGameController() {
     dayKey,
     setDayKey,
     setMission,
-    setRunIndex, // ✅ added
+    setRunIndex,
     stateRef,
     completionFiredRef,
     setShowCompleteFx,
+    // streak should NOT change on day rollover by itself, so no need to pass setStreak
   });
 
   usePersistence({
@@ -179,11 +204,14 @@ export function useMarketingGameController() {
     dayKey,
     mission,
     done,
+    // streak is persisted via stateRef.current.player.streak; ensure your persistence
+    // code copies player wholesale or at least doesn't overwrite streak.
   });
 
   return {
     ui: {
       stars,
+      streak,
       currentRealmId,
       dayKey,
       runIndex,

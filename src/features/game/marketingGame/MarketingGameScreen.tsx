@@ -70,6 +70,10 @@ export default function MarketingGameScreen() {
             <div className="rounded border px-3 py-1 text-sm">
               Stars: <span className="font-semibold">{ui.stars}</span>
             </div>
+            <div className="rounded border px-3 py-1 text-sm">
+              Streak: <span className="font-semibold">{ui.streak.current}</span>
+              <span className="opacity-60"> (best {ui.streak.best})</span>
+            </div>
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">

@@ -35,6 +35,13 @@ export type GameState = {
 export type PlayerProgress = {
   stars: number;
   xp?: number;
+  streak?: StreakProgress;
+};
+
+export type StreakProgress = {
+  current: number;
+  best: number;
+  lastCompletedDayKey?: string; // YYYY-MM-DD
 };
 
 export type RealmProgress = {
