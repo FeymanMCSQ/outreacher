@@ -1,3 +1,5 @@
+// src/domain/game/rules/missionArchetypes.ts
+
 import type { MissionArchetypeDefinition } from '../types';
 
 export const MISSION_ARCHETYPES: MissionArchetypeDefinition[] = [

@@ -1,3 +1,4 @@
+// src/domain/game/services/generateDailyMission.ts
 import type { Mission } from '../entities/Mission';
 import type { Quest } from '../entities/Quest';
 import type { MissionArchetype } from '../entities/Mission';

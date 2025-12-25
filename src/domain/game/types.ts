@@ -42,12 +42,6 @@ export type RealmProgress = {
   unlockedRealmIds: string[];
 };
 
-export type MissionProgress = {
-  // YYYY-MM-DD -> Mission
-  activeMissionsByDay: Record<string, Mission>;
-  completedMissionIds: string[];
-};
-
 export type Mission = {
   id: string;
   dayKey: string; // YYYY-MM-DD
@@ -62,4 +56,12 @@ export type Quest = {
   description: string;
   status: 'pending' | 'completed';
   completedAt?: string; // ISO
+};
+
+export type MissionProgress = {
+  // YYYY-MM-DD#N -> Mission  (N = run index  // YYYY-MM-DD -> Mission (or YYYY-MM-DD#runIndex -> Mission)
+  activeMissionsByDay: Record<string, Mission>;
+  completedMissionIds: string[];
+  // YYYY-MM-DD -> current run index (0, 1, 2...)
+  runIndexByDay?: Record<string, number>;
 };
