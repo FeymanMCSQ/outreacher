@@ -7,7 +7,7 @@ import type { Mission } from '@/domain/game/entities/Mission';
 import type { GameState } from '@/domain/game/types';
 import { LocalGameStateRepo } from '@/data/repositories/LocalGameStateRepo';
 
-import { currentRunKey, type RealmId } from './marketingGameState';
+import { currentRunKey } from './marketingGameState';
 
 export function usePersistence(params: {
   repo: LocalGameStateRepo;
@@ -16,21 +16,11 @@ export function usePersistence(params: {
   stars: number;
   coins: number;
 
-  currentRealmId: RealmId;
   dayKey: string;
   mission: Mission;
   done: boolean;
 }) {
-  const {
-    repo,
-    stateRef,
-    stars,
-    coins,
-    currentRealmId,
-    dayKey,
-    mission,
-    done,
-  } = params;
+  const { repo, stateRef, stars, coins, dayKey, mission, done } = params;
 
   const didMountRef = useRef(false);
 
@@ -39,9 +29,6 @@ export function usePersistence(params: {
       didMountRef.current = true;
       return;
     }
-
-    const unlockedRealmIds: RealmId[] =
-      stars >= 30 ? ['realm-1', 'realm-2'] : ['realm-1'];
 
     const key = currentRunKey(stateRef.current, dayKey);
 
@@ -52,7 +39,11 @@ export function usePersistence(params: {
         stars,
         coins,
       },
-      realms: { currentRealmId, unlockedRealmIds },
+
+      // ✅ realms are now computed/managed elsewhere (controller + normalizeLoadedState)
+      // Persist whatever is already in stateRef.current.realms (incl. bg map)
+      realms: stateRef.current.realms,
+
       missions: {
         ...stateRef.current.missions,
         runIndexByDay: stateRef.current.missions.runIndexByDay ?? {},
@@ -72,14 +63,5 @@ export function usePersistence(params: {
     };
 
     repo.save(stateRef.current);
-  }, [
-    repo,
-    stars,
-    coins, // ✅ must trigger save
-    currentRealmId,
-    dayKey,
-    mission,
-    done,
-    stateRef,
-  ]);
+  }, [repo, stateRef, stars, coins, dayKey, mission, done]);
 }

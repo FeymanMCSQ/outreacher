@@ -3,129 +3,255 @@
 
 import QuestCard from '@/shared/game-ui/QuestCard';
 import { MissionCompleteOverlay } from '@/shared/game-ui/MissionCompleteOverlay';
+import { pickTextColor } from '@/shared/lib/color';
 
 import { useMarketingGameController } from './useMarketingGameController';
 
 export default function MarketingGameScreen() {
   const { ui, actions } = useMarketingGameController();
 
+  const fg = pickTextColor(ui.currentRealmBg);
+  const isDarkText = fg === '#000000';
+
+  const surfaceClass = isDarkText
+    ? 'bg-white/75 border-black/10 shadow-black/10'
+    : 'bg-black/35 border-white/15 shadow-black/40';
+
+  const chipClass = isDarkText
+    ? 'bg-white/60 border-black/15'
+    : 'bg-black/25 border-white/20';
+
+  const softText = isDarkText ? 'text-black/60' : 'text-white/70';
+  const softerText = isDarkText ? 'text-black/45' : 'text-white/55';
+
+  const dividerClass = isDarkText ? 'bg-black/10' : 'bg-white/15';
+
   return (
     <main
-      className={[
-        'min-h-screen p-6 transition-colors duration-500',
-        'text-slate-900 dark:text-slate-100',
-        ui.currentRealmId === 'realm-1'
-          ? 'bg-gradient-to-b from-sky-50 to-white dark:from-slate-900 dark:to-slate-950'
-          : 'bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-slate-950',
-      ].join(' ')}
+      style={{ backgroundColor: ui.currentRealmBg, color: fg }}
+      className="min-h-screen transition-colors duration-500"
     >
       <MissionCompleteOverlay show={ui.showCompleteFx} />
 
-      <div className="mx-auto max-w-2xl">
-        {/* Realm switcher (dev harness) */}
-        <div className="mb-6 rounded-lg border p-4">
-          <div className="text-sm opacity-70">Realm</div>
-          <div className="mt-1 text-lg font-semibold">
-            {ui.currentRealm.name}
-          </div>
-
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={() => actions.trySwitchRealm('realm-1')}
-              className="rounded border px-3 py-2 text-sm"
-            >
-              Enter Rolling Plains
-            </button>
-
-            <button
-              type="button"
-              onClick={() => actions.trySwitchRealm('realm-2')}
-              className="rounded border px-3 py-2 text-sm"
-            >
-              Enter Whispering Groves
-            </button>
-          </div>
-
-          <div className="mt-2 text-xs opacity-60">
-            Realm II unlocks at 30 ⭐
-          </div>
-
-          {/* Dev visibility */}
-          <div className="mt-2 text-xs opacity-50">
-            Day: {ui.dayKey} · Run: {ui.runIndex}
-          </div>
-        </div>
-
-        {/* Mission header */}
-        <header className="mb-6 rounded-lg border p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm opacity-70">Mission</div>
-              <div className="mt-1 text-xl font-semibold">
-                {ui.currentRealm.name} · {ui.mission.archetype.toUpperCase()}
-              </div>
-            </div>
-
-            <div className="rounded border px-3 py-1 text-sm">
-              Stars: <span className="font-semibold">{ui.stars}</span>
-            </div>
-            <div className="rounded border px-3 py-1 text-sm">
-              Coins: <span className="font-semibold">{ui.coins}</span>
-            </div>
-
-            <div className="rounded border px-3 py-1 text-sm">
-              Streak: <span className="font-semibold">{ui.streak.current}</span>
-              <span className="opacity-60"> (best {ui.streak.best})</span>
-            </div>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-            <div className="rounded border px-3 py-1">
-              Completed{' '}
-              <span className="font-semibold">{ui.progress.completed}</span> /{' '}
-              <span className="font-semibold">{ui.progress.total}</span>
-            </div>
-
-            <div className="rounded border px-3 py-1">
-              Remaining{' '}
-              <span className="font-semibold">{ui.progress.remaining}</span>
-            </div>
-
-            <div className="ml-auto">
-              <button
-                type="button"
-                onClick={actions.resetMission}
-                className="rounded border px-3 py-1 text-sm"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-
-          {ui.done && (
-            <div className="mt-3 rounded border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm">
-              Mission complete. ⭐ awarded.
-            </div>
-          )}
-        </header>
-
-        {/* Quests */}
-        <section className="space-y-4">
-          {ui.remaining.map((q) => (
-            <QuestCard
-              key={q.id}
-              quest={q}
-              onComplete={() => actions.completeQuest(q.id)}
+      {/* Center + pad the whole experience */}
+      <div className="flex min-h-screen justify-center px-5 py-10 sm:px-8">
+        <div className="w-full max-w-3xl">
+          {/* Big glassy surface */}
+          <div
+            className={[
+              'relative overflow-hidden rounded-2xl border p-5 shadow-2xl',
+              surfaceClass,
+            ].join(' ')}
+          >
+            {/* subtle background pattern */}
+            <div
+              aria-hidden
+              className={[
+                'pointer-events-none absolute inset-0 opacity-40',
+                isDarkText
+                  ? 'bg-[radial-gradient(circle_at_20%_10%,rgba(0,0,0,0.06),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(0,0,0,0.04),transparent_35%)]'
+                  : 'bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.12),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.10),transparent_35%)]',
+              ].join(' ')}
             />
-          ))}
 
-          {ui.remaining.length === 0 && (
-            <div className="rounded-lg border p-4 text-sm opacity-70">
-              No remaining quests.
+            <div className="relative">
+              {/* Top row */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div
+                    className={[
+                      'text-xs font-medium uppercase tracking-wider',
+                      softerText,
+                    ].join(' ')}
+                  >
+                    Realm
+                  </div>
+
+                  <div className="mt-1 text-2xl font-semibold leading-tight">
+                    Realm {ui.currentRealmNumber}
+                  </div>
+
+                  <div className={['mt-1 text-sm', softText].join(' ')}>
+                    New realm every <span className="font-semibold">30 ⭐</span>{' '}
+                    <span className={softerText}>(30, 60, 90…)</span>
+                  </div>
+
+                  <div className={['mt-2 text-xs', softerText].join(' ')}>
+                    Day: {ui.dayKey} · Run: {ui.runIndex}
+                  </div>
+                </div>
+
+                {/* Stats chips */}
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <div
+                    className={[
+                      'flex items-center gap-2 rounded-full border px-3 py-1 text-sm',
+                      chipClass,
+                    ].join(' ')}
+                  >
+                    <span className={softerText}>⭐</span>
+                    <span className={softText}>Stars</span>
+                    <span className="font-semibold tabular-nums">
+                      {ui.stars}
+                    </span>
+                  </div>
+
+                  <div
+                    className={[
+                      'flex items-center gap-2 rounded-full border px-3 py-1 text-sm',
+                      chipClass,
+                    ].join(' ')}
+                  >
+                    <span className={softerText}>🪙</span>
+                    <span className={softText}>Coins</span>
+                    <span className="font-semibold tabular-nums">
+                      {ui.coins}
+                    </span>
+                  </div>
+
+                  <div
+                    className={[
+                      'flex items-center gap-2 rounded-full border px-3 py-1 text-sm',
+                      chipClass,
+                    ].join(' ')}
+                  >
+                    <span className={softerText}>🔥</span>
+                    <span className={softText}>Streak</span>
+                    <span className="font-semibold tabular-nums">
+                      {ui.streak.current}
+                    </span>
+                    <span className={softerText}>(best {ui.streak.best})</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className={['my-5 h-px w-full', dividerClass].join(' ')} />
+
+              {/* Mission card */}
+              <div
+                className={[
+                  'rounded-2xl border p-4',
+                  isDarkText
+                    ? 'bg-white/55 border-black/10'
+                    : 'bg-black/20 border-white/15',
+                ].join(' ')}
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div
+                      className={[
+                        'text-xs font-medium uppercase tracking-wider',
+                        softerText,
+                      ].join(' ')}
+                    >
+                      Mission
+                    </div>
+
+                    <div className="mt-1 text-xl font-semibold">
+                      {String(ui.mission.archetype).toUpperCase()}
+                    </div>
+
+                    <div className={['mt-1 text-sm', softText].join(' ')}>
+                      Realm {ui.currentRealmNumber}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={actions.resetMission}
+                    className={[
+                      'self-start rounded-full border px-4 py-2 text-sm font-medium transition',
+                      chipClass,
+                      isDarkText ? 'hover:bg-white/80' : 'hover:bg-black/35',
+                    ].join(' ')}
+                  >
+                    Reset
+                  </button>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <div
+                    className={[
+                      'rounded-full border px-3 py-1 text-sm',
+                      chipClass,
+                    ].join(' ')}
+                  >
+                    <span className={softText}>Completed</span>{' '}
+                    <span className="font-semibold tabular-nums">
+                      {ui.progress.completed}
+                    </span>{' '}
+                    <span className={softerText}>/</span>{' '}
+                    <span className="font-semibold tabular-nums">
+                      {ui.progress.total}
+                    </span>
+                  </div>
+
+                  <div
+                    className={[
+                      'rounded-full border px-3 py-1 text-sm',
+                      chipClass,
+                    ].join(' ')}
+                  >
+                    <span className={softText}>Remaining</span>{' '}
+                    <span className="font-semibold tabular-nums">
+                      {ui.progress.remaining}
+                    </span>
+                  </div>
+
+                  {ui.done && (
+                    <div
+                      className={[
+                        'sm:ml-auto rounded-full border px-3 py-1 text-sm font-medium',
+                        isDarkText
+                          ? 'border-emerald-600/25 bg-emerald-600/10'
+                          : 'border-emerald-300/35 bg-emerald-300/10',
+                      ].join(' ')}
+                    >
+                      ✅ Mission complete · ⭐ awarded
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quests */}
+              <section className="mt-5 space-y-3">
+                {ui.remaining.map((q) => (
+                  <div
+                    key={q.id}
+                    className={[
+                      'group rounded-2xl border p-4 transition',
+                      isDarkText
+                        ? 'bg-white/55 border-black/10 hover:bg-white/75'
+                        : 'bg-black/20 border-white/15 hover:bg-black/30',
+                    ].join(' ')}
+                  >
+                    <QuestCard
+                      quest={q}
+                      onComplete={() => actions.completeQuest(q.id)}
+                    />
+                  </div>
+                ))}
+
+                {ui.remaining.length === 0 && (
+                  <div
+                    className={[
+                      'rounded-2xl border p-4 text-sm',
+                      isDarkText
+                        ? 'bg-white/55 border-black/10 text-black/60'
+                        : 'bg-black/20 border-white/15 text-white/70',
+                    ].join(' ')}
+                  >
+                    No remaining quests.
+                  </div>
+                )}
+              </section>
             </div>
-          )}
-        </section>
+          </div>
+
+          {/* bottom breathing room */}
+          <div className="h-10" />
+        </div>
       </div>
     </main>
   );

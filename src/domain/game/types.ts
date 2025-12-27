@@ -45,11 +45,6 @@ export type StreakProgress = {
   lastCompletedDayKey?: string; // YYYY-MM-DD
 };
 
-export type RealmProgress = {
-  currentRealmId: string;
-  unlockedRealmIds: string[];
-};
-
 export type Mission = {
   id: string;
   dayKey: string; // YYYY-MM-DD
@@ -72,4 +67,10 @@ export type MissionProgress = {
   completedMissionIds: string[];
   // YYYY-MM-DD -> current run index (0, 1, 2...)
   runIndexByDay?: Record<string, number>;
+};
+
+export type RealmProgress = {
+  currentRealmNumber: number; // 1,2,3...
+  unlockedRealmNumbers: number[]; // [1..N]
+  realmBgByNumber: Record<number, string>; // { 1: "#...", 2: "#..." }
 };
