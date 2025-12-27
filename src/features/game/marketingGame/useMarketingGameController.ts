@@ -27,7 +27,7 @@ import { usePersistence } from './usePersistence';
 
 const COMPLETE_AT = '2025-12-20T12:00:00.000Z';
 const COMPLETE_FX_DURATION_MS = 900;
-const MISSION_COMPLETE_SFX = '/sfx/quest-complete-1.mp3';
+const MISSION_COMPLETE_SFX = '/sfx/mission-complete-1.mp3';
 
 const DEFAULT_STREAK: StreakProgress = {
   current: 0,
