@@ -14,13 +14,23 @@ export function usePersistence(params: {
   stateRef: React.MutableRefObject<GameState>;
 
   stars: number;
+  coins: number;
+
   currentRealmId: RealmId;
   dayKey: string;
   mission: Mission;
   done: boolean;
 }) {
-  const { repo, stateRef, stars, currentRealmId, dayKey, mission, done } =
-    params;
+  const {
+    repo,
+    stateRef,
+    stars,
+    coins,
+    currentRealmId,
+    dayKey,
+    mission,
+    done,
+  } = params;
 
   const didMountRef = useRef(false);
 
@@ -37,7 +47,11 @@ export function usePersistence(params: {
 
     stateRef.current = {
       ...stateRef.current,
-      player: { ...stateRef.current.player, stars },
+      player: {
+        ...stateRef.current.player,
+        stars,
+        coins,
+      },
       realms: { currentRealmId, unlockedRealmIds },
       missions: {
         ...stateRef.current.missions,
@@ -58,5 +72,14 @@ export function usePersistence(params: {
     };
 
     repo.save(stateRef.current);
-  }, [repo, stateRef, stars, currentRealmId, dayKey, mission, done]);
+  }, [
+    repo,
+    stars,
+    coins, // ✅ must trigger save
+    currentRealmId,
+    dayKey,
+    mission,
+    done,
+    stateRef,
+  ]);
 }

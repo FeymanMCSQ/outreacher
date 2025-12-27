@@ -71,6 +71,10 @@ export default function MarketingGameScreen() {
               Stars: <span className="font-semibold">{ui.stars}</span>
             </div>
             <div className="rounded border px-3 py-1 text-sm">
+              Coins: <span className="font-semibold">{ui.coins}</span>
+            </div>
+
+            <div className="rounded border px-3 py-1 text-sm">
               Streak: <span className="font-semibold">{ui.streak.current}</span>
               <span className="opacity-60"> (best {ui.streak.best})</span>
             </div>

@@ -34,6 +34,7 @@ export type GameState = {
 
 export type PlayerProgress = {
   stars: number;
+  coins: number;
   xp?: number;
   streak?: StreakProgress;
 };

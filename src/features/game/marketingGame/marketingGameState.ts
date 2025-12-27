@@ -1,5 +1,5 @@
 // src/features/game/marketingGame/marketingGameState.ts
-import type { GameState } from '@/domain/game/types';
+import type { GameState, StreakProgress } from '@/domain/game/types';
 
 export type RealmId = 'realm-1' | 'realm-2';
 
@@ -7,12 +7,19 @@ export function isValidRealmId(x: unknown): x is RealmId {
   return x === 'realm-1' || x === 'realm-2';
 }
 
+const DEFAULT_STREAK: StreakProgress = {
+  current: 0,
+  best: 0,
+  lastCompletedDayKey: undefined,
+};
+
 export function makeEmptyState(): GameState {
   return {
     version: 1,
     player: {
       stars: 0,
-      streak: { current: 0, best: 0, lastCompletedDayKey: undefined },
+      coins: 0,
+      streak: DEFAULT_STREAK,
     },
     realms: { currentRealmId: 'realm-1', unlockedRealmIds: ['realm-1'] },
     missions: {
@@ -29,19 +36,14 @@ export function normalizeLoadedState(s: GameState): GameState {
 
     player: {
       ...s.player,
+      coins: typeof s.player.coins === 'number' ? s.player.coins : 0,
 
-      // Quest 5.4 — streak support (backfill older saves)
-      streak: s.player.streak ?? {
-        current: 0,
-        best: 0,
-        lastCompletedDayKey: undefined,
-      },
+      streak: s.player.streak ?? DEFAULT_STREAK,
     },
 
     missions: {
       ...s.missions,
 
-      // Quest 5.3 — speedrun support
       runIndexByDay: s.missions.runIndexByDay ?? {},
     },
   };

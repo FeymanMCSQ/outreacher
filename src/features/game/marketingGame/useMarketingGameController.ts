@@ -57,6 +57,9 @@ export function useMarketingGameController() {
   });
 
   const [showCompleteFx, setShowCompleteFx] = useState(false);
+  const [coins, setCoins] = useState(
+    () => initial.backingState.player.coins ?? 0,
+  );
 
   const completionFiredRef = useRef(false);
   const stateRef = useRef<GameState>(initial.backingState);
@@ -84,10 +87,8 @@ export function useMarketingGameController() {
     setShowCompleteFx(true);
     window.setTimeout(() => setShowCompleteFx(false), COMPLETE_FX_DURATION_MS);
   }, []);
-
   const completeQuestAction = useCallback(
     (questId: string) => {
-      // Uses 'mission' from closure - okay for click handlers
       const m = mission;
       const wasDone = isMissionComplete(m);
 
@@ -97,6 +98,23 @@ export function useMarketingGameController() {
       const before = m.quests[idx];
       const after = completeQuest(before, COMPLETE_AT);
       if (before === after) return;
+
+      const justCompletedNow =
+        before.status !== 'completed' && after.status === 'completed';
+
+      if (justCompletedNow) {
+        // ✅ React state (UI)
+        setCoins((c) => c + 10);
+
+        // ✅ backing state (authoritative, avoids closure + race)
+        stateRef.current = {
+          ...stateRef.current,
+          player: {
+            ...stateRef.current.player,
+            coins: (stateRef.current.player.coins ?? 0) + 10,
+          },
+        };
+      }
 
       const nextQuests = m.quests.slice();
       nextQuests[idx] = after;
@@ -114,29 +132,26 @@ export function useMarketingGameController() {
 
       const nowDone = isMissionComplete(nextMission);
 
-      // 1) Update React state with quest progress
       setMission(nextMission);
 
-      // 2) Completion edge -> side effects exactly once
       if (!wasDone && nowDone && !completionFiredRef.current) {
         completionFiredRef.current = true;
 
-        // ⭐ award + FX
         triggerMissionCompleteFx();
 
-        // 🔥 streak update (only once per dayKey)
         const nextStreak = applyStreakOnCompletion(
           stateRef.current.player.streak ?? DEFAULT_STREAK,
           dayKey,
         );
         setStreak(nextStreak);
 
-        // Store completed mission under current run key + persist streak into backing state
         const key = currentRunKey(stateRef.current, dayKey);
+
         stateRef.current = {
           ...stateRef.current,
           player: {
             ...stateRef.current.player,
+            // ✅ do NOT read `coins` from closure
             streak: nextStreak,
           },
           missions: {
@@ -156,15 +171,12 @@ export function useMarketingGameController() {
           },
         };
 
-        // Speedrun: immediately advance to next mission
         const advanced = advanceMissionForDay(stateRef.current, dayKey);
         stateRef.current = advanced.state;
 
-        // Update runIndex from the advanced state
         const nextRun = advanced.state.missions.runIndexByDay?.[dayKey] ?? 0;
         setRunIndex(nextRun);
 
-        // Reset flags for the NEW mission
         completionFiredRef.current = false;
         setShowCompleteFx(false);
         setMission(advanced.mission);
@@ -200,6 +212,7 @@ export function useMarketingGameController() {
     repo,
     stateRef,
     stars,
+    coins,
     currentRealmId,
     dayKey,
     mission,
@@ -211,6 +224,7 @@ export function useMarketingGameController() {
   return {
     ui: {
       stars,
+      coins,
       streak,
       currentRealmId,
       dayKey,
