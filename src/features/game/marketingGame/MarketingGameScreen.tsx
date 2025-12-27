@@ -38,8 +38,9 @@ export default function MarketingGameScreen() {
         <div className="w-full max-w-3xl">
           {/* Big glassy surface */}
           <div
+            style={{ padding: '2rem' }}
             className={[
-              'relative overflow-hidden rounded-2xl border p-6 shadow-2xl sm:p-10',
+              'relative overflow-hidden rounded-2xl border shadow-2xl',
               surfaceClass,
             ].join(' ')}
           >
