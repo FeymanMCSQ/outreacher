@@ -34,12 +34,12 @@ export default function MarketingGameScreen() {
       <MissionCompleteOverlay show={ui.showCompleteFx} />
 
       {/* Center + pad the whole experience */}
-      <div className="flex min-h-screen justify-center px-5 py-10 sm:px-8">
+      <div className="flex min-h-screen flex-col items-center justify-center px-5 py-10 sm:px-8">
         <div className="w-full max-w-3xl">
           {/* Big glassy surface */}
           <div
             className={[
-              'relative overflow-hidden rounded-2xl border p-5 shadow-2xl',
+              'relative overflow-hidden rounded-2xl border p-6 shadow-2xl sm:p-10',
               surfaceClass,
             ].join(' ')}
           >
@@ -217,20 +217,17 @@ export default function MarketingGameScreen() {
               {/* Quests */}
               <section className="mt-5 space-y-3">
                 {ui.remaining.map((q) => (
-                  <div
+                  <QuestCard
                     key={q.id}
+                    quest={q}
+                    onComplete={() => actions.completeQuest(q.id)}
                     className={[
-                      'group rounded-2xl border p-4 transition',
+                      'max-w-none transition', // override default max-w-md
                       isDarkText
                         ? 'bg-white/55 border-black/10 hover:bg-white/75'
                         : 'bg-black/20 border-white/15 hover:bg-black/30',
                     ].join(' ')}
-                  >
-                    <QuestCard
-                      quest={q}
-                      onComplete={() => actions.completeQuest(q.id)}
-                    />
-                  </div>
+                  />
                 ))}
 
                 {ui.remaining.length === 0 && (

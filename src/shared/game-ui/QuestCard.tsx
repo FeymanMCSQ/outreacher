@@ -7,9 +7,10 @@ import { playSound } from '@/shared/lib/playSound';
 type Props = {
   quest: Quest;
   onComplete: () => void;
+  className?: string;
 };
 
-export default function QuestCard({ quest, onComplete }: Props) {
+export default function QuestCard({ quest, onComplete, className }: Props) {
   const isDone = quest.status === 'completed';
 
   // Ensures SFX fires exactly once per completion (per mount lifecycle)
@@ -29,7 +30,9 @@ export default function QuestCard({ quest, onComplete }: Props) {
   }, [quest.status]);
 
   return (
-    <div className="w-full max-w-md rounded-lg border p-4">
+    <div
+      className={['w-full max-w-md rounded-lg border p-4', className].join(' ')}
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-sm opacity-70">{quest.category}</div>
