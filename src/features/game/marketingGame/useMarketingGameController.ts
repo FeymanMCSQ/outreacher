@@ -28,6 +28,8 @@ import { usePersistence } from './usePersistence';
 const COMPLETE_AT = '2025-12-20T12:00:00.000Z';
 const COMPLETE_FX_DURATION_MS = 900;
 const MISSION_COMPLETE_SFX = '/sfx/mission-complete-1.mp3';
+const QUEST_COMPLETE_SFX = '/sfx/quest-complete-1.mp3';
+const REALM_UNLOCK_SFX = '/sfx/realm-unlock-1.mp3';
 
 const DEFAULT_STREAK: StreakProgress = {
   current: 0,
@@ -116,6 +118,7 @@ export function useMarketingGameController() {
       if (justCompletedNow) {
         // UI state
         setCoins((c) => c + 10);
+        playSound(QUEST_COMPLETE_SFX);
 
         // backing state (authoritative)
         stateRef.current = {
@@ -162,8 +165,15 @@ export function useMarketingGameController() {
         setStreak(nextStreak);
 
         // update backing state: stars + streak + completed mission record
-        const nextStars = (stateRef.current.player.stars ?? 0) + starsDelta;
+        const currentStars = stateRef.current.player.stars ?? 0;
+        const nextStars = currentStars + starsDelta;
+
+        const prevRealmNumber = realmNumberForStars(currentStars);
         const nextRealmNumber = realmNumberForStars(nextStars);
+
+        if (nextRealmNumber > prevRealmNumber) {
+          playSound(REALM_UNLOCK_SFX);
+        }
 
         // ensure theme exists for the *new* realm (important when crossing 30,60,...)
         const themed = ensureRealmTheme(stateRef.current, nextRealmNumber);
