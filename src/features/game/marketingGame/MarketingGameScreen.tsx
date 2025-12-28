@@ -103,11 +103,18 @@ export default function MarketingGameScreen() {
                       chipClass,
                     ].join(' ')}
                   >
-                    <span className={softerText}>🪙</span>
-                    <span className={softText}>Coins</span>
-                    <span className="font-semibold tabular-nums">
-                      {ui.coins}
-                    </span>
+                    <div
+                      className="flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium m-1"
+                      style={{
+                        backgroundColor: ui.titleBg,
+                        color: pickTextColor(ui.titleBg),
+                      }}
+                    >
+                      <span className="opacity-70">🪙</span>
+                      <span>{ui.coins}</span>
+                      <span className="opacity-60">·</span>
+                      <span>{ui.title}</span>
+                    </div>
                   </div>
 
                   <div

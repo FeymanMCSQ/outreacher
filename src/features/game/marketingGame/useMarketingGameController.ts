@@ -25,6 +25,12 @@ import { currentRunIndex, currentRunKey } from './marketingGameState';
 import { useDailyReset } from './useDailyReset';
 import { usePersistence } from './usePersistence';
 
+import {
+  titleForCoins,
+  titleIndexForCoins,
+  colorForTitleIndex,
+} from '@/domain/game/progression/titles';
+
 const COMPLETE_AT = '2025-12-20T12:00:00.000Z';
 const COMPLETE_FX_DURATION_MS = 900;
 const MISSION_COMPLETE_SFX = '/sfx/mission-complete-1.mp3';
@@ -81,6 +87,10 @@ export function useMarketingGameController() {
   const done = useMemo(() => isMissionComplete(mission), [mission]);
 
   const currentRealmNumber = useMemo(() => realmNumberForStars(stars), [stars]);
+
+  const titleIndex = titleIndexForCoins(coins);
+  const title = titleForCoins(coins);
+  const titleBg = colorForTitleIndex(titleIndex);
 
   const currentRealmBg = useMemo(() => {
     // don't read refs during render; use stateRef only via a stable copy:
@@ -270,6 +280,8 @@ export function useMarketingGameController() {
     ui: {
       stars,
       coins,
+      title: title.name,
+      titleBg,
       streak,
 
       currentRealmNumber,
