@@ -99,15 +99,17 @@ export default function MarketingGameScreen() {
 
                   <div
                     className={[
-                      'flex items-center gap-2 rounded-full border px-3 py-1 text-sm',
+                      'flex items-center rounded-full border p-1 text-sm',
                       chipClass,
                     ].join(' ')}
                   >
                     <div
-                      className="flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium m-1"
+                      className="flex items-center gap-1 rounded-full text-sm font-medium"
                       style={{
                         backgroundColor: ui.titleBg,
                         color: pickTextColor(ui.titleBg),
+                        padding: '5px 12px',
+                        border: 'solid 1px',
                       }}
                     >
                       <span className="opacity-70">🪙</span>
